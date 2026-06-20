@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard ติดตามแผนงานโครงการ - โรงเรียนบ้านห้วยแก้วสามัคคีธรรม</title>
+    <!-- Google Fonts: Kanit for headings, Sarabun for body text -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Chart.js CDN for interactive visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons for clean, modern outline icons -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+    <!-- App Loader -->
+    <div id="loader-overlay" class="loader-overlay">
+        <div class="loader-content">
+            <div class="spinner"></div>
+            <h3>กำลังดึงข้อมูลโครงการล่าสุด...</h3>
+            <p>ระบบกำลังเชื่อมต่อกับ Google Sheets เพื่อสรุปข้อมูลสำหรับผู้บริหาร</p>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Container -->
+    <div class="dashboard-wrapper">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo-title">
+                <div class="logo-container">
+                    <i data-lucide="graduation-cap" class="logo-icon"></i>
+                </div>
+                <div class="header-text">
+                    <h1>ระบบระบบติดตามแผนงานโครงการสำหรับผู้บริหาร</h1>
+                    <h2>โรงเรียนบ้านห้วยแก้วสามัคคีธรรม</h2>
+                </div>
+            </div>
+            
+            <div class="header-controls">
+                <div class="sync-status">
+                    <i data-lucide="refresh-cw" id="sync-icon" class="sync-icon"></i>
+                    <span id="sync-time-text">กำลังอัปเดต...</span>
+                </div>
+                <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="สลับโหมดมืด/สว่าง">
+                    <i data-lucide="moon" class="theme-icon dark-icon"></i>
+                    <i data-lucide="sun" class="theme-icon light-icon" style="display: none;"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Metrics Section (KPI Cards) -->
+        <section class="metrics-grid">
+            <!-- Total Projects Card -->
+            <div class="metric-card card-projects">
+                <div class="card-body">
+                    <div class="metric-info">
+                        <span class="metric-label">โครงการทั้งหมด</span>
+                        <h3 id="stat-total-projects" class="metric-value">-</h3>
+                        <span class="metric-subtext">โครงการตามแผนประจำปี</span>
+                    </div>
+                    <div class="metric-icon-bg">
+                        <i data-lucide="folder-kanban" class="metric-icon"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Budget Card -->
+            <div class="metric-card card-budget">
+                <div class="card-body">
+                    <div class="metric-info">
+                        <span class="metric-label">งบประมาณจัดสรรรวม</span>
+                        <h3 id="stat-total-budget" class="metric-value">฿-</h3>
+                        <span id="budget-percentage" class="metric-subtext">การเบิกจ่ายทั้งหมด</span>
+                    </div>
+                    <div class="metric-icon-bg">
+                        <i data-lucide="wallet" class="metric-icon"></i>
+                    </div>
+                </div>
+                <div class="progress-bar-mini-container">
+                    <div id="budget-progress-bar" class="progress-bar-mini" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Total Spent Card -->
+            <div class="metric-card card-spent">
+                <div class="card-body">
+                    <div class="metric-info">
+                        <span class="metric-label">งบประมาณที่ใช้ไป</span>
+                        <h3 id="stat-total-spent" class="metric-value">฿-</h3>
+                        <span id="spent-percentage" class="metric-subtext">ของงบประมาณทั้งหมด</span>
+                    </div>
+                    <div class="metric-icon-bg">
+                        <i data-lucide="banknote" class="metric-icon"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remaining Budget Card -->
+            <div class="metric-card card-remaining">
+                <div class="card-body">
+                    <div class="metric-info">
+                        <span class="metric-label">งบประมาณคงเหลือ</span>
+                        <h3 id="stat-total-remaining" class="metric-value">฿-</h3>
+                        <span id="remaining-percentage" class="metric-subtext">พร้อมสำหรับการดำเนินงาน</span>
+                    </div>
+                    <div class="metric-icon-bg">
+                        <i data-lucide="coins" class="metric-icon"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overall Progress Card -->
+            <div class="metric-card card-progress">
+                <div class="card-body">
+                    <div class="metric-info">
+                        <span class="metric-label">ความก้าวหน้าโครงการเฉลี่ย</span>
+                        <h3 id="stat-avg-progress" class="metric-value">-%</h3>
+                        <span id="completed-projects-count" class="metric-subtext">จากจำนวนโครงการทั้งหมด</span>
+                    </div>
+                    <div class="metric-icon-bg">
+                        <i data-lucide="trending-up" class="metric-icon"></i>
+                    </div>
+                </div>
+                <div class="progress-bar-mini-container">
+                    <div id="overall-progress-bar" class="progress-bar-mini" style="width: 0%"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Grid Section -->
+        <section class="charts-grid">
+            <!-- Chart Card 1: Status Distribution -->
+            <div class="chart-card glass-panel">
+                <div class="chart-header">
+                    <h3><i data-lucide="pie-chart" class="section-icon"></i> สัดส่วนสถานะโครงการ</h3>
+                    <p class="chart-subtitle">แสดงความคืบหน้าภาพรวมของโครงการทั้งหมด</p>
+                </div>
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart Card 2: Budget vs Spent by Department -->
+            <div class="chart-card glass-panel">
+                <div class="chart-header">
+                    <h3><i data-lucide="bar-chart-3" class="section-icon"></i> เปรียบเทียบงบประมาณตามกลุ่มงาน</h3>
+                    <p class="chart-subtitle">เปรียบเทียบงบประมาณจัดสรรและงบประมาณที่ใช้จริง</p>
+                </div>
+                <div class="chart-container">
+                    <canvas id="departmentChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Project Table List Section -->
+        <section class="table-section glass-panel">
+            <div class="table-section-header">
+                <div class="table-title">
+                    <h3><i data-lucide="list-todo" class="section-icon"></i> รายละเอียดข้อมูลโครงการและงบประมาณ</h3>
+                    <p class="section-subtitle">คลิกที่หัวตารางเพื่อจัดเรียงข้อมูล ค้นหา หรือกรองตามเงื่อนไขที่ต้องการ</p>
+                </div>
+                
+                <!-- Filters and Search Toolbar -->
+                <div class="toolbar-container">
+                    <!-- Search Input -->
+                    <div class="search-box">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="search-input" placeholder="ค้นหาชื่อโครงการ, ผู้รับผิดชอบ...">
+                        <button id="clear-search-btn" class="clear-btn" style="display: none;">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+
+                    <!-- Filter Dropdowns -->
+                    <div class="filter-group">
+                        <!-- Department Filter -->
+                        <div class="filter-select-wrapper">
+                            <i data-lucide="building-2" class="filter-icon"></i>
+                            <select id="filter-department" aria-label="กรองตามกลุ่มงาน">
+                                <option value="">ทุกกลุ่มงาน</option>
+                            </select>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div class="filter-select-wrapper">
+                            <i data-lucide="check-circle" class="filter-icon"></i>
+                            <select id="filter-status" aria-label="กรองตามสถานะ">
+                                <option value="">ทุกสถานะ</option>
+                                <option value="ยังไม่ดำเนินการ">ยังไม่ดำเนินการ</option>
+                                <option value="อยู่ระหว่างดำเนินการ">อยู่ระหว่างดำเนินการ</option>
+                                <option value="ดำเนินการแล้ว">ดำเนินการแล้ว</option>
+                            </select>
+                        </div>
+
+                        <!-- Reset Button -->
+                        <button id="reset-filters-btn" class="btn-secondary" title="ล้างการกรองทั้งหมด">
+                            <i data-lucide="rotate-ccw"></i>
+                            <span>ล้างตัวกรอง</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Container for Responsive Scroll -->
+            <div class="table-responsive-container">
+                <table class="project-table" id="project-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="id">รหัส <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                            <th class="sortable" data-sort="name">ชื่อโครงการ <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                            <th class="sortable" data-sort="department">กลุ่มงาน <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                            <th class="sortable" data-sort="manager">ผู้รับผิดชอบ <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                            <th class="sortable numeric" data-sort="budget">งบประมาณจัดสรร <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                            <th class="sortable numeric" data-sort="spent">ใช้ไปแล้ว <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                            <th class="sortable numeric" data-sort="remaining">คงเหลือ <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                            <th class="sortable progress-col" data-sort="progress">ความก้าวหน้า <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                            <th class="sortable text-center" data-sort="status">สถานะ <i data-lucide="chevrons-up-down" class="sort-icon"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="project-table-body">
+                        <!-- Table rows will be populated dynamically via JavaScript -->
+                    </tbody>
+                </table>
+                <div id="no-data-msg" class="no-data-msg" style="display: none;">
+                    <i data-lucide="alert-circle" class="no-data-icon"></i>
+                    <p>ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>© 2026 โรงเรียนบ้านห้วยแก้วสามัคคีธรรม. สงวนลิขสิทธิ์.</p>
+            <p class="developer-note">ระบบดึงข้อมูลแบบ Real-time จาก Google Sheets | ออกแบบสําหรับการตัดสินใจของผู้บริหาร</p>
+        </footer>
+    </div>
+
+    <!-- Custom JavaScript Application -->
+    <script src="app.js"></script>
+</body>
+</html>
